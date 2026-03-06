@@ -500,8 +500,6 @@ export default function SettingsPage() {
   )
 }
 
-        {/* Stats */}
-        {stats && (
           <div className="stats-grid">
             <div className="stat-card">
               <div className="stat-value">{stats.total}</div>
