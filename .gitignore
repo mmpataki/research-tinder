@@ -17,6 +17,7 @@ env/
 backend/.env
 backend/research_tinder.db
 backend/*.db
+backend/static/
 
 # Frontend
 frontend/node_modules/
