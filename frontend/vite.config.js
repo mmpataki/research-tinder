@@ -17,7 +17,15 @@ export default defineConfig({
         background_color: '#0f172a',
         display: 'standalone',
         orientation: 'portrait',
+        start_url: '/',
+        scope: '/',
         icons: [
+          {
+            src: '/favicon.svg',
+            sizes: 'any',
+            type: 'image/svg+xml',
+            purpose: 'any',
+          },
           {
             src: '/icon-192.png',
             sizes: '192x192',
@@ -27,6 +35,51 @@ export default defineConfig({
             src: '/icon-512.png',
             sizes: '512x512',
             type: 'image/png',
+            purpose: 'any maskable',
+          },
+        ],
+      },
+      workbox: {
+        // Cache page navigations (SPA)
+        navigateFallback: '/index.html',
+        navigateFallbackAllowlist: [/^\/(?!api\/).*/],
+        // Runtime caching for API calls
+        runtimeCaching: [
+          {
+            urlPattern: /^\/api\/papers\/feed/,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'api-feed',
+              expiration: { maxEntries: 5, maxAgeSeconds: 86400 },
+              networkTimeoutSeconds: 5,
+            },
+          },
+          {
+            urlPattern: /^\/api\/papers\/reading-list/,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'api-reading-list',
+              expiration: { maxEntries: 5, maxAgeSeconds: 86400 },
+              networkTimeoutSeconds: 5,
+            },
+          },
+          {
+            urlPattern: /^\/api\/papers\/stash/,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'api-stash',
+              expiration: { maxEntries: 5, maxAgeSeconds: 86400 },
+              networkTimeoutSeconds: 5,
+            },
+          },
+          {
+            urlPattern: /^\/api\//,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'api-general',
+              expiration: { maxEntries: 20, maxAgeSeconds: 86400 },
+              networkTimeoutSeconds: 5,
+            },
           },
         ],
       },

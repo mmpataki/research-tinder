@@ -152,16 +152,17 @@ body {
   justify-content: center;
   padding: 16px;
   min-height: 0;
+  overflow: hidden;
 }
 
 .swipe-card {
   position: absolute;
   width: calc(100% - 32px);
-  max-height: calc(100vh - 220px);
+  max-height: calc(100% - 16px);
   background: var(--bg-card);
   border-radius: var(--radius);
   border: 1px solid var(--border);
-  box-shadow: var(--shadow);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35), 0 2px 8px rgba(0, 0, 0, 0.2);
   padding: 20px;
   padding-bottom: 24px;
   overflow-y: auto;
@@ -582,7 +583,7 @@ body {
 /* Light theme tweaks */
 [data-theme="light"] ::-webkit-scrollbar-track { background: var(--bg-primary); }
 [data-theme="light"] ::-webkit-scrollbar-thumb { background: var(--border); }
-[data-theme="light"] .swipe-card { box-shadow: 0 2px 12px rgba(76, 79, 105, 0.12); }
+[data-theme="light"] .swipe-card { box-shadow: 0 8px 32px rgba(76, 79, 105, 0.18), 0 2px 8px rgba(76, 79, 105, 0.1); }
 [data-theme="light"] .toast { box-shadow: 0 4px 16px rgba(76, 79, 105, 0.15); }
 
 /* ===== Paper Date ===== */
