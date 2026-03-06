@@ -8,31 +8,60 @@ import { Link } from 'lucide-react'
 export default function SwipeCard({ paper, onSwipe, style, isTop, favoriteAuthors = [] }) {
   const cardRef = useRef(null)
   const startX = useRef(0)
+  const startY = useRef(0)
   const currentX = useRef(0)
   const [dragX, setDragX] = useState(0)
   const [dragging, setDragging] = useState(false)
   const [exiting, setExiting] = useState(null) // 'left' | 'right' | null
+  const directionLocked = useRef(null) // 'horizontal' | 'vertical' | null
 
   const SWIPE_THRESHOLD = 100
+  const LOCK_THRESHOLD = 8 // px before we decide scroll vs swipe
 
   const handlePointerDown = useCallback((e) => {
     if (!isTop) return
     startX.current = e.clientX
+    startY.current = e.clientY
     currentX.current = e.clientX
+    directionLocked.current = null
     setDragging(true)
-    cardRef.current?.setPointerCapture(e.pointerId)
   }, [isTop])
 
   const handlePointerMove = useCallback((e) => {
     if (!dragging) return
+    const dx = e.clientX - startX.current
+    const dy = e.clientY - startY.current
+
+    // Lock direction on first significant movement
+    if (!directionLocked.current) {
+      if (Math.abs(dx) > LOCK_THRESHOLD || Math.abs(dy) > LOCK_THRESHOLD) {
+        directionLocked.current = Math.abs(dx) > Math.abs(dy) ? 'horizontal' : 'vertical'
+        if (directionLocked.current === 'horizontal') {
+          // Capture pointer to prevent scroll and get all future events
+          cardRef.current?.setPointerCapture(e.pointerId)
+        }
+      }
+      return
+    }
+
+    // Vertical → let browser scroll, don't drag card
+    if (directionLocked.current === 'vertical') return
+
     currentX.current = e.clientX
-    const dx = currentX.current - startX.current
     setDragX(dx)
   }, [dragging])
 
   const handlePointerUp = useCallback((e) => {
     if (!dragging) return
     setDragging(false)
+    const wasHorizontal = directionLocked.current === 'horizontal'
+    directionLocked.current = null
+
+    if (!wasHorizontal) {
+      setDragX(0)
+      return
+    }
+
     const dx = currentX.current - startX.current
 
     if (Math.abs(dx) > SWIPE_THRESHOLD) {

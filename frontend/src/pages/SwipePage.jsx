@@ -17,6 +17,7 @@ export default function SwipePage() {
   const [favoriteAuthors, setFavoriteAuthors] = useState([])
   const [online, setOnline] = useState(isOnline())
   const [queueLen, setQueueLen] = useState(() => getSwipeQueue().length)
+  const [isFlushing, setIsFlushing] = useState(false)
   const flushing = useRef(false)
 
   // ── helpers ─────────────────────────────────────────────────────────────────
@@ -35,6 +36,7 @@ export default function SwipePage() {
     const queue = getSwipeQueue()
     if (queue.length === 0) return
     flushing.current = true
+    setIsFlushing(true)
     let flushed = 0
     for (const { id, action } of queue) {
       try {
@@ -47,6 +49,7 @@ export default function SwipePage() {
       }
     }
     flushing.current = false
+    setIsFlushing(false)
     refreshQueueLen()
     if (flushed > 0) showToast(`✓ Synced ${flushed} offline swipe${flushed > 1 ? 's' : ''}`)
   }, [])
@@ -170,7 +173,7 @@ export default function SwipePage() {
           )}
         </div>
       )}
-      {online && queueLen > 0 && (
+      {online && queueLen > 0 && isFlushing && (
         <div className="offline-banner" style={{ background: 'rgba(34,197,94,0.1)', borderColor: 'rgba(34,197,94,0.4)', color: 'var(--green)' }}>
           <Wifi size={14} />
           Back online — syncing {queueLen} swipe{queueLen > 1 ? 's' : ''}…

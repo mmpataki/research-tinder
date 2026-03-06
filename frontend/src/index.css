@@ -158,7 +158,7 @@ body {
 .swipe-card {
   position: absolute;
   width: calc(100% - 32px);
-  max-height: calc(100% - 16px);
+  height: calc(100% - 16px);
   background: var(--bg-card);
   border-radius: var(--radius);
   border: 1px solid var(--border);
@@ -168,7 +168,7 @@ body {
   overflow-y: auto;
   scrollbar-width: none;       /* Firefox */
   -ms-overflow-style: none;    /* IE/Edge */
-  touch-action: none;
+  touch-action: pan-y;
   user-select: none;
   cursor: grab;
 }
