@@ -99,7 +99,10 @@ def compute_recommendation_score(
     """
     Compute a composite recommendation score for a paper.
 
-    final = 0.55 * llm_score + 0.35 * preference_similarity + 0.10 * category_boost
+    final = 0.70 * llm_score + 0.22 * preference_similarity + 0.08 * category_boost
+
+    Papers with a high LLM score (>= 0.8) are guaranteed a minimum
+    recommendation score so they never get buried in the stash.
 
     Returns float 0.0 - 1.0.
     """
@@ -125,7 +128,13 @@ def compute_recommendation_score(
             cat_score = sum(category_boost.get(c, 0.0) for c in cats) / len(cats)
             cat_score = max(0.0, min(1.0, cat_score))
 
-    final = 0.55 * llm_score + 0.35 * pref_score + 0.10 * cat_score
+    final = 0.70 * llm_score + 0.22 * pref_score + 0.08 * cat_score
+
+    # Floor: high LLM scores should never produce a low recommendation.
+    # A paper the LLM rated 90% should show up in the feed, not the stash.
+    floor = llm_score * 0.85
+    final = max(final, floor)
+
     return round(max(0.0, min(1.0, final)), 4)
 
 

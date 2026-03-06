@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { ExternalLink, FileText, Heart, RefreshCw } from 'lucide-react'
+import { ExternalLink, FileText, Heart, RefreshCw, ChevronDown, ChevronUp } from 'lucide-react'
 import { api } from '../api'
 
 export default function StashPage() {
@@ -8,6 +8,7 @@ export default function StashPage() {
   const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(true)
   const [toast, setToast] = useState(null)
+  const [expandedId, setExpandedId] = useState(null)
 
   const loadPapers = useCallback(async () => {
     setLoading(true)
@@ -77,13 +78,20 @@ export default function StashPage() {
         <div className="reading-list">
           {papers.map(paper => (
             <div key={paper.id} className="paper-item">
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+              <div
+                style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, cursor: 'pointer' }}
+                onClick={() => setExpandedId(prev => prev === paper.id ? null : paper.id)}
+              >
                 <div className="paper-title" style={{ flex: 1 }}>{paper.title}</div>
                 {paper.recommendation_score != null && (
                   <span className="rec-score">
                     {(paper.recommendation_score * 100).toFixed(0)}%
                   </span>
                 )}
+                {expandedId === paper.id
+                  ? <ChevronUp size={16} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+                  : <ChevronDown size={16} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+                }
               </div>
               <div className="paper-meta">
                 <span>{paper.authors?.slice(0, 3).join(', ')}{paper.authors?.length > 3 ? ' et al.' : ''}</span>
@@ -102,6 +110,16 @@ export default function StashPage() {
                   </>
                 )}
               </div>
+
+              {expandedId === paper.id && paper.abstract && (
+                <div className="paper-detail">
+                  <div className="paper-abstract">{paper.abstract}</div>
+                  {paper.relevance_reason && (
+                    <div className="paper-reason">{paper.relevance_reason}</div>
+                  )}
+                </div>
+              )}
+
               <div className="paper-actions">
                 <a href={paper.arxiv_url} target="_blank" rel="noopener noreferrer">
                   <FileText size={12} style={{ marginRight: 3, verticalAlign: -1 }} />
