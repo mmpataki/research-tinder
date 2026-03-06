@@ -165,7 +165,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="page">
+    <div className="page settings-layout">
       <div className="header">
         <h1>Settings</h1>
       </div>
