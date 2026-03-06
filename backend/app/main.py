@@ -72,8 +72,9 @@ if STATIC_DIR.exists():
         file_path = STATIC_DIR / full_path
         if file_path.exists() and file_path.is_file():
             response = FileResponse(file_path)
-            # Service worker must never be cached by the browser
-            if full_path in ("sw.js", "registerSW.js", "manifest.webmanifest"):
+            # Service worker + related files must never be cached by the browser
+            no_cache_files = ("sw.js", "manifest.webmanifest")
+            if full_path in no_cache_files or full_path.startswith("workbox-"):
                 response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
                 if full_path == "sw.js":
                     response.headers["Service-Worker-Allowed"] = "/"
