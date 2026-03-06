@@ -71,5 +71,11 @@ if STATIC_DIR.exists():
     async def serve_spa(full_path: str):
         file_path = STATIC_DIR / full_path
         if file_path.exists() and file_path.is_file():
-            return FileResponse(file_path)
+            response = FileResponse(file_path)
+            # Service worker must never be cached by the browser
+            if full_path in ("sw.js", "registerSW.js", "manifest.webmanifest"):
+                response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+                if full_path == "sw.js":
+                    response.headers["Service-Worker-Allowed"] = "/"
+            return response
         return FileResponse(STATIC_DIR / "index.html")

@@ -8,7 +8,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg'],
+      includeAssets: ['favicon.svg', 'icon-192.png', 'icon-512.png'],
       manifest: {
         name: 'Research Tinder',
         short_name: 'ResTinder',
@@ -39,14 +39,21 @@ export default defineConfig({
           },
         ],
       },
+      // Enable service worker in dev mode for testing
+      devOptions: {
+        enabled: true,
+        type: 'module',
+      },
       workbox: {
         // Cache page navigations (SPA)
         navigateFallback: '/index.html',
         navigateFallbackAllowlist: [/^\/(?!api\/).*/],
         // Runtime caching for API calls
+        // NOTE: urlPattern regexes are tested against the FULL URL (including origin),
+        // so do NOT anchor with ^ at the start.
         runtimeCaching: [
           {
-            urlPattern: /^\/api\/papers\/feed/,
+            urlPattern: /\/api\/papers\/feed/,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'api-feed',
@@ -55,7 +62,7 @@ export default defineConfig({
             },
           },
           {
-            urlPattern: /^\/api\/papers\/reading-list/,
+            urlPattern: /\/api\/papers\/reading-list/,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'api-reading-list',
@@ -64,7 +71,7 @@ export default defineConfig({
             },
           },
           {
-            urlPattern: /^\/api\/papers\/stash/,
+            urlPattern: /\/api\/papers\/stash/,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'api-stash',
@@ -73,7 +80,7 @@ export default defineConfig({
             },
           },
           {
-            urlPattern: /^\/api\//,
+            urlPattern: /\/api\//,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'api-general',

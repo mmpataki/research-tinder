@@ -13,8 +13,26 @@ ReactDOM.createRoot(document.getElementById('root')).render(
 )
 
 // Register PWA service worker
-if ('serviceWorker' in navigator) {
-  import('virtual:pwa-register').then(({ registerSW }) => {
-    registerSW({ immediate: true })
-  })
-}
+import { registerSW } from 'virtual:pwa-register'
+
+const updateSW = registerSW({
+  immediate: true,
+  onRegisteredSW(swUrl, registration) {
+    console.log('[PWA] Service worker registered:', swUrl)
+    // Check for updates every hour
+    if (registration) {
+      setInterval(() => { registration.update() }, 60 * 60 * 1000)
+    }
+  },
+  onOfflineReady() {
+    console.log('[PWA] App is ready to work offline')
+  },
+  onNeedRefresh() {
+    // Auto-update: accept new service worker immediately
+    console.log('[PWA] New content available, updating...')
+    updateSW(true)
+  },
+  onRegisterError(error) {
+    console.error('[PWA] Service worker registration failed:', error)
+  },
+})
