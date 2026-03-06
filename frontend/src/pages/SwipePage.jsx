@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { X, Heart, ExternalLink, RefreshCw, WifiOff, Wifi } from 'lucide-react'
+import { X, Heart, ExternalLink, RefreshCw, WifiOff } from 'lucide-react'
 import { api } from '../api'
 import SwipeCard from '../components/SwipeCard'
 import {
   cacheFeed, getCachedFeed,
   cacheFavs, getCachedFavs,
-  enqueueSwipe, getSwipeQueue, removeFromQueue,
+  enqueueSwipe, getSwipeQueue,
   removePaperFromCache,
   isOnline,
 } from '../cache'
@@ -17,8 +17,6 @@ export default function SwipePage() {
   const [favoriteAuthors, setFavoriteAuthors] = useState([])
   const [online, setOnline] = useState(isOnline())
   const [queueLen, setQueueLen] = useState(() => getSwipeQueue().length)
-  const [isFlushing, setIsFlushing] = useState(false)
-  const flushing = useRef(false)
 
   // ── helpers ─────────────────────────────────────────────────────────────────
 
@@ -29,38 +27,10 @@ export default function SwipePage() {
     setTimeout(() => setToast(null), duration)
   }
 
-  // ── flush pending swipes once we're back online ──────────────────────────────
-
-  const flushQueue = useCallback(async () => {
-    if (flushing.current) return
-    const queue = getSwipeQueue()
-    if (queue.length === 0) return
-    flushing.current = true
-    setIsFlushing(true)
-    let flushed = 0
-    for (const { id, action } of queue) {
-      try {
-        await api.swipePaper(id, action)
-        removeFromQueue(id)
-        flushed++
-      } catch {
-        // server unreachable — stop and try next time
-        break
-      }
-    }
-    flushing.current = false
-    setIsFlushing(false)
-    refreshQueueLen()
-    if (flushed > 0) showToast(`✓ Synced ${flushed} offline swipe${flushed > 1 ? 's' : ''}`)
-  }, [])
-
   // ── network event listeners ──────────────────────────────────────────────────
 
   useEffect(() => {
-    const goOnline = () => {
-      setOnline(true)
-      flushQueue()
-    }
+    const goOnline = () => { setOnline(true); refreshQueueLen() }
     const goOffline = () => setOnline(false)
     window.addEventListener('online', goOnline)
     window.addEventListener('offline', goOffline)
@@ -68,7 +38,7 @@ export default function SwipePage() {
       window.removeEventListener('online', goOnline)
       window.removeEventListener('offline', goOffline)
     }
-  }, [flushQueue])
+  }, [])
 
   // ── feed loading ─────────────────────────────────────────────────────────────
 
@@ -111,6 +81,16 @@ export default function SwipePage() {
   }, [])
 
   useEffect(() => { loadFeed() }, [loadFeed])
+
+  // ── re-fetch on tab focus (cross-device consistency) ────────────────────────
+
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === 'visible' && isOnline()) loadFeed()
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  }, [loadFeed])
 
   // ── swipe handler ─────────────────────────────────────────────────────────────
 
@@ -173,12 +153,7 @@ export default function SwipePage() {
           )}
         </div>
       )}
-      {online && queueLen > 0 && isFlushing && (
-        <div className="offline-banner" style={{ background: 'rgba(34,197,94,0.1)', borderColor: 'rgba(34,197,94,0.4)', color: 'var(--green)' }}>
-          <Wifi size={14} />
-          Back online — syncing {queueLen} swipe{queueLen > 1 ? 's' : ''}…
-        </div>
-      )}
+
 
       <div className="header">
         <h1>Research Tinder</h1>

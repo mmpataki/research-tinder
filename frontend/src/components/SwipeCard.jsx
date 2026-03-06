@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
-import { Link } from 'lucide-react'
+import { Link, Volume2, VolumeX } from 'lucide-react'
 
 /**
  * SwipeCard — a draggable card that detects left/right swipe gestures.
@@ -14,6 +14,27 @@ export default function SwipeCard({ paper, onSwipe, style, isTop, favoriteAuthor
   const [dragging, setDragging] = useState(false)
   const [exiting, setExiting] = useState(null) // 'left' | 'right' | null
   const directionLocked = useRef(null) // 'horizontal' | 'vertical' | null
+
+  const [speaking, setSpeaking] = useState(false)
+
+  const toggleTTS = useCallback(() => {
+    if (speechSynthesis.speaking) {
+      speechSynthesis.cancel()
+      setSpeaking(false)
+      return
+    }
+    const text = `${paper.title}. ${paper.abstract || ''}`
+    const utterance = new SpeechSynthesisUtterance(text)
+    utterance.onend = () => setSpeaking(false)
+    utterance.onerror = () => setSpeaking(false)
+    setSpeaking(true)
+    speechSynthesis.speak(utterance)
+  }, [paper.title, paper.abstract])
+
+  // Stop TTS when card exits
+  useEffect(() => {
+    return () => { if (speechSynthesis.speaking) speechSynthesis.cancel() }
+  }, [])
 
   const SWIPE_THRESHOLD = 100
   const LOCK_THRESHOLD = 8 // px before we decide scroll vs swipe
@@ -154,7 +175,17 @@ export default function SwipeCard({ paper, onSwipe, style, isTop, favoriteAuthor
         )}
       </div>
 
-      <div className="card-title">{paper.title}</div>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
+        <div className="card-title" style={{ flex: 1 }}>{paper.title}</div>
+        <button
+          className="tts-btn"
+          onClick={toggleTTS}
+          onPointerDown={e => e.stopPropagation()}
+          title={speaking ? 'Stop reading' : 'Read aloud'}
+        >
+          {speaking ? <VolumeX size={16} /> : <Volume2 size={16} />}
+        </button>
+      </div>
 
       <div className="card-authors">
         {(paper.authors || []).slice(0, 5).map((author, i) => (

@@ -1,10 +1,12 @@
-import { useState, useEffect, createContext } from 'react'
+import { useState, useEffect, useCallback, useRef, createContext } from 'react'
 import { Routes, Route, NavLink } from 'react-router-dom'
 import { Flame, BookOpen, Settings, Archive } from 'lucide-react'
 import SwipePage from './pages/SwipePage'
 import ReadingListPage from './pages/ReadingListPage'
 import SettingsPage from './pages/SettingsPage'
 import StashPage from './pages/StashPage'
+import { api } from './api'
+import { getSwipeQueue, removeFromQueue, isOnline } from './cache'
 
 export const AppContext = createContext()
 
@@ -24,6 +26,46 @@ export default function App() {
   const [theme, setTheme] = useState(() => localStorage.getItem('rt-theme') || 'dark')
   const [font, setFont] = useState(() => localStorage.getItem('rt-font') || 'system')
   const [accent, setAccentRaw] = useState(() => localStorage.getItem('rt-accent') || '#6366f1')
+  const [syncToast, setSyncToast] = useState(null)
+  const flushing = useRef(false)
+
+  // ── Global offline-queue flush ────────────────────────────────────────────
+  const flushQueue = useCallback(async () => {
+    if (flushing.current || !isOnline()) return
+    const queue = getSwipeQueue()
+    if (queue.length === 0) return
+    flushing.current = true
+    let flushed = 0
+    for (const { id, action } of queue) {
+      try {
+        await api.swipePaper(id, action)
+        removeFromQueue(id)
+        flushed++
+      } catch {
+        break
+      }
+    }
+    flushing.current = false
+    if (flushed > 0) {
+      setSyncToast(`✓ Synced ${flushed} offline swipe${flushed > 1 ? 's' : ''}`)
+      setTimeout(() => setSyncToast(null), 3000)
+    }
+  }, [])
+
+  // Flush on mount, on 'online' event, and on visibility change (tab focus)
+  useEffect(() => {
+    flushQueue()
+    const goOnline = () => flushQueue()
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible' && isOnline()) flushQueue()
+    }
+    window.addEventListener('online', goOnline)
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => {
+      window.removeEventListener('online', goOnline)
+      document.removeEventListener('visibilitychange', onVisibility)
+    }
+  }, [flushQueue])
 
   const setAccent = (color) => {
     setAccentRaw(color)
@@ -50,6 +92,7 @@ export default function App() {
   return (
     <AppContext.Provider value={{ theme, setTheme, font, setFont, accent, setAccent }}>
       <div className="app">
+        {syncToast && <div className="toast">{syncToast}</div>}
         <Routes>
           <Route path="/" element={<SwipePage />} />
           <Route path="/reading-list" element={<ReadingListPage />} />
